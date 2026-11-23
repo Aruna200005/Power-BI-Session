@@ -155,6 +155,103 @@ Edge cases:
 - The growth measures also return blank for a zero or missing prior-period denominator through `DIVIDE`.
 - The 121,253 fact rows and 121,253 distinct line keys confirm that order count must use `SalesOrder[Sales Order]`, not `COUNTROWS(Sales)`.
 
+## Session 3: Report quality and documentation
+
+### Recommended visual narrative
+
+Use one 1920×1080 executive sales page with a top-to-bottom reading and filtering order:
+
+1. **Page title and context.** “Sales and Product Performance” with the reporting-period context shown separately.
+2. **Headline KPI cards:** Net Sales, Gross Sales, Total Profit, Gross Margin %, Total Orders, and Total Units.
+3. **Monthly trend:** A line chart of Net Sales and a separate MoM growth measure. Display the same date hierarchy and avoid dual unrelated axes.
+4. **Product category breakdown:** A clustered bar chart with Net Sales and Total Profit for four categories. Category is the primary comparison dimension; units can be a tooltip.
+5. **Top products:** A ranked horizontal bar chart for Net Sales or Units, limited to the top 10 and sorted descending.
+6. **Territory view:** A matrix or map only for broad Region/Country values. Do not expose City or Postal Code.
+7. **Filters:** Reporting date, fiscal year/quarter, product category/subcategory, territory region/country, and sales channel.
+
+Avoid using the fact table or surrogate keys as fields. Use measures and dimension attributes, and keep line-detail fields unavailable in the report.
+
+### Accessibility check
+
+- Use the Fluent theme with high-contrast text and avoid color alone to communicate positive or negative growth.
+- Add explicit chart titles and meaningful axis labels. For example, use “Net Sales by Month” rather than “Sum of Sales Amount”.
+- Provide subtitles for KPI units and time context.
+- Use tooltips for supporting measures, but not as the only location for critical values.
+- Make growth trends distinguishable by position and direct labels as well as color.
+- Preserve keyboard navigation and provide an on-page reset or clear filters control.
+- Verify visual alternatives and alt text manually in Power BI Desktop after the report canvas is populated. This PBIP currently has no populated report visuals, so alt text cannot be checked automatically from PBIP JSON.
+- Run Power BI Desktop’s Accessibility checker before publishing.
+
+### Performance check
+
+Trace-based DAX samples completed successfully:
+
+- KPI row query: 7 ms.
+- Customer/reseller distinct-count query: 4 ms; 16 ms CPU.
+- Product category summary: 7 ms; 16 ms CPU.
+- 37-row monthly trend: 23 ms; 16 ms CPU.
+- Month-over-month query returned 37 periods and included `null` for July 2017, as expected.
+
+Performance actions:
+
+- Import mode is retained for the 121,253-line fact and small dimensions.
+- Calculations use direct sums and distinct counts rather than table materialization.
+- The Date table and active order-date relationship support time-intelligence.
+- Date and product/territory dimensions should remain the main slicer fields.
+- Keep the monthly trend and category summary separate; avoid one high-cardinality visual that mixes many customer, product, order, and date values.
+- Profile in Power BI Desktop Performance Analyzer after visuals are added and remove high-cost visual-level summaries before publishing.
+
+### Data dictionary
+
+| Table | Key fields | Grain / purpose |
+|---|---|---|
+| Sales | SalesOrderLineKey, foreign keys, quantities and amounts | One sales-order-line fact row; central fact table |
+| SalesOrder | SalesOrderLineKey, Sales Order, Sales Order Line, Channel | Order and channel attributes for each line |
+| Date | DateKey, Date, Fiscal Year, Fiscal Quarter, Month | Reporting date dimension; active OrderDateKey relationship |
+| Product | ProductKey, SKU, Product, Category, Subcategory, Color, Model, prices/cost | Product hierarchy and attributes |
+| Customer | CustomerKey, hidden Customer ID/name/city/postal code, broad region attributes | Customer dimension; detailed fields hidden |
+| Reseller | ResellerKey, hidden Reseller ID/name/city/postal code, Business Type, broad region | Reseller dimension; detailed fields hidden |
+| SalesTerritory | SalesTerritoryKey, Region, Country, Group | Broad geographic reporting |
+
+Primary measures:
+
+| Measure | Formula / purpose |
+|---|---|
+| Gross Sales | `SUM(Sales[Extended Amount])`; gross source amount |
+| Net Sales | `SUM(Sales[Sales Amount])`; net source amount |
+| Total Cost | `SUM(Sales[Total Product Cost])` |
+| Total Profit | Net Sales minus Total Cost |
+| Gross Margin % | `DIVIDE([Total Profit], [Net Sales])` |
+| Total Units | `SUM(Sales[Order Quantity])` |
+| Total Orders | `DISTINCTCOUNT(SalesOrder[Sales Order])` |
+| Total Customers | `DISTINCTCOUNT(Sales[CustomerKey])` |
+| Average Sales per Order | Net Sales divided by Total Orders |
+| Average Sales per Customer | Net Sales divided by Total Customers |
+| Prior Month Net Sales | `DATEADD('Date'[Date], -1, MONTH)` |
+| Month-over-Month Growth % | `(Current - Prior) / Prior` |
+| Prior Year Net Sales | `DATEADD('Date'[Date], -1, YEAR)` |
+| Year-over-Year Growth % | `(Current - Prior) / Prior` |
+
+### Sensitive-data review
+
+The source contains or can derive potentially sensitive fields:
+
+- 18,485 customer names and customer IDs.
+- 702 reseller IDs and 700 reseller names.
+- City and postal-code values for customers and resellers.
+- 324 distinct customer postal codes and 502 distinct reseller postal codes.
+
+The model now hides Customer ID, Customer name, Customer City, Customer Postal Code, Reseller ID, Reseller name, Reseller City, Reseller Postal Code, and fact/dimension surrogate keys. State-Province and Country-Region remain available for broad reporting, subject to row-level privacy and publication policy.
+
+Before publishing:
+
+1. Confirm that hiding a field in the model does not by itself enforce row-level security or prevent export if the field remains reachable through the data source.
+2. Restrict report access and exports to approved audiences.
+3. Avoid visual combinations that enable re-identification of small customer or postal-code cohorts.
+4. Do not publish Customer or Reseller IDs, names, cities, or postal codes.
+5. Configure and test row-level security if users must receive different regional or account views.
+6. Document the workbook file path and replace it with a governed shared source before cloud refresh.
+
 ## Validation checklist for future refreshes
 
 1. Confirm `SalesOrderLineKey` remains unique and that fact foreign keys match their dimension keys.
