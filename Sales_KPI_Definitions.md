@@ -252,6 +252,62 @@ Before publishing:
 5. Configure and test row-level security if users must receive different regional or account views.
 6. Document the workbook file path and replace it with a governed shared source before cloud refresh.
 
+## Session 4: Capstone build
+
+### Business question
+
+**How should the sales leadership team allocate growth and profitability attention across fiscal periods, channels, territories, and product categories?**
+
+The scenario is to separate the following decisions:
+
+- Which fiscal periods are growing or contracting.
+- Whether Internet or Reseller channel growth is more profitable.
+- Which territories contribute the most revenue and should receive further investment.
+- Which product categories and products drive sales and profit.
+- Whether order and customer counts support the revenue narrative at the correct grain.
+
+### Source-to-data-to-model trace
+
+| Requirement | Source / transformation | Model object | Capstone output |
+|---|---|---|---|
+| Net sales and gross sales | `Sales[Sales Amount]` and `Sales[Extended Amount]` | Sales fact plus Net/Gross Sales measures | Executive revenue cards |
+| Profit and margin | Net Sales and `Total Product Cost` | Total Profit and Gross Margin % measures | Category/channel/territory profitability |
+| Order count | `SalesOrder[Sales Order]` through `SalesOrderLineKey` | `Sales[Sales Order]` fact calculated column and `Total Orders` measure | Correct order counts in all filter contexts |
+| Channel | `SalesOrder[Channel]` through `SalesOrderLineKey` | Hidden `Sales[Sales Channel]` fact calculated column | Internet versus Reseller analysis |
+| Time growth | Active Order Date relationship | Date dimension plus MoM/YoY measures | Fiscal trend and growth |
+| Product performance | Product category/subcategory hierarchy | Product dimension plus category summaries | Revenue and profit ranking |
+| Territory performance | Sales territory dimensions | SalesTerritory region/country/group attributes | Regional comparison |
+| Customer reach | CustomerKey in the fact | Total Customers measure | Customer coverage |
+
+### Capstone validation
+
+- 121,253 fact rows reconcile to 121,253 distinct SalesOrderLineKeys.
+- 31,455 distinct order IDs reconcile at the whole-model level.
+- 18,485 distinct customers and 350 sold products are represented.
+- Net Sales reconciles to 109,809,274.203 and Profit to 12,551,366.2483.
+- Internet Net Sales: 29,358,677.2207 across 27,659 orders.
+- Reseller Net Sales: 80,450,596.9823 across 3,796 orders.
+- Internet and Reseller Net Sales sum to full Net Sales.
+- The Internet margin is 41.1493%; the Reseller margin is 0.5848%.
+- Bikes generate 94,620,526.2077 Net Sales and 10,515,096.6084 Profit.
+- Fiscal-year Net Sales are 23,860,891.1663 for FY2018, 34,070,108.5001 for FY2019, and 51,878,274.5366 for FY2020.
+
+The fact-level order count must remain the primary order measure. It avoids the prior incorrect behavior in territory or channel slices where the SalesOrder lookup could repeat the full global order count.
+
+### Realistic team handoff
+
+**Sales leadership:** Review Net Sales, Profit, margin, MoM growth, and YoY growth.
+
+**Channel managers:** Compare Internet and Reseller by order count, average sales per order, and margin.
+
+**Product managers:** Rank categories and products by Net Sales, Units, and Profit. Do not rank unfiltered products from a total that includes unrelated contexts.
+
+**Territory managers:** Use Region and Country rather than hidden City/Postcode fields. Validate order counts with the fact-level Total Orders measure.
+
+**Finance:** Reconcile to Gross Sales, Net Sales, Total Cost, and Total Profit. Investigate source discount fields and gross/net differences before publishing cost explanations.
+
+**Data/BI team:** Refresh all partitions, preserve 2,113 blank ship-date lines, and validate foreign-key matches and source totals after each workbook refresh.
+
 ## Validation checklist for future refreshes
 
 1. Confirm `SalesOrderLineKey` remains unique and that fact foreign keys match their dimension keys.
