@@ -83,6 +83,17 @@ The loaded source was profiled before preparing the model:
 - Therefore, use the provided Extended Amount and Sales Amount fields for gross and net sales respectively, but do **not** claim that the discount-percentage field explains their difference. Confirm the source's gross/net business meaning before presenting a discount or discount-rate KPI.
 - Sales history begins in July 2017. New-customer and retention KPIs are therefore “first observed in this dataset” and “retained across observed periods,” not necessarily lifetime measures.
 
+## Power Query refresh and source-row validation
+
+The Power Query partitions for Product, Sales, Customer, Reseller, Sales Territory, Sales Order, and Date were refreshed successfully in Power BI Desktop; all seven report a Ready state.
+
+The imported output was checked against rows in the source workbook:
+
+- Product keys 210–217 matched the source for SKU, product name, subcategory, and category.
+- Sales lines 43659001–43659005 matched the source for ProductKey, quantity, unit price, Extended Amount, Unit Price Discount Pct, and Sales Amount. Floating-point values were equivalent within numeric precision.
+- Model totals were 121,253 sales rows and distinct line keys, 31,455 orders, 274,776 units, 397 products and distinct product keys, 18,485 customers, and 1,461 dates.
+- Imported net sales totaled 109,809,274.203; gross sales totaled 110,336,782.0914. These are source-field sums, not a claim that the source's discount field explains their difference.
+
 ## Validation checklist for future refreshes
 
 1. Confirm `SalesOrderLineKey` remains unique and that fact foreign keys match their dimension keys.
