@@ -94,6 +94,67 @@ The imported output was checked against rows in the source workbook:
 - Model totals were 121,253 sales rows and distinct line keys, 31,455 orders, 274,776 units, 397 products and distinct product keys, 18,485 customers, and 1,461 dates.
 - Imported net sales totaled 109,809,274.203; gross sales totaled 110,336,782.0914. These are source-field sums, not a claim that the source's discount field explains their difference.
 
+## Session 2: Star schema and DAX validation
+
+### Model review
+
+The model is a sales-line star schema:
+
+- **Fact:** `Sales` contains one row per `SalesOrderLineKey`.
+- **Dimensions:** `Date`, `Product`, `Customer`, `Reseller`, and `SalesTerritory`.
+- **Order dimension:** `SalesOrder` describes each sales order line and connects to `Sales` by `SalesOrderLineKey`.
+- **Active relationships:** Order date (`Sales[OrderDateKey]` to `Date[DateKey]`) and the five fact-to-dimension relationships filter the fact table.
+- **Inactive relationships:** Due date and ship date remain available for explicit `USERELATIONSHIP` measures.
+- `Sales`-to-`SalesOrder` uses a many-to-one, one-direction relationship. This avoids bidirectional filtering and preserves the fact-to-dimension grain.
+
+### Implemented measures
+
+| Measure | DAX purpose |
+|---|---|
+| Gross Sales | Sum of `Extended Amount`. |
+| Net Sales | Sum of `Sales Amount`. |
+| Total Cost | Sum of `Total Product Cost`. |
+| Total Profit | Net Sales minus Total Cost. |
+| Gross Margin % | Profit divided by Net Sales. |
+| Total Units | Sum of `Order Quantity`. |
+| Total Orders | Distinct count of `SalesOrder[Sales Order]`. |
+| Total Customers | Distinct count of `Sales[CustomerKey]`. |
+| Average Sales per Order | Net Sales divided by Total Orders. |
+| Average Sales per Customer | Net Sales divided by Total Customers. |
+| Prior Month Net Sales | Net Sales shifted back one month with `DATEADD`. |
+| Month-over-Month Growth % | `(current - prior month) / prior month`, using `DIVIDE` for safe zero handling. |
+| Prior Year Net Sales | Net Sales shifted back one year with `DATEADD`. |
+| Year-over-Year Growth % | `(current - prior year) / prior year`, using `DIVIDE` for safe zero handling. |
+
+### Manual validation
+
+Whole-model source/measure checks:
+
+- Net Sales: 109,809,274.203, matching the source-column sum.
+- Gross Sales: 110,336,782.0914, matching the source-column sum.
+- Total Cost: 97,257,907.9547.
+- Total Profit: 109,809,274.203 - 97,257,907.9547 = 12,551,366.2483.
+- Gross Margin: 12,551,366.2483 / 109,809,274.203 = 11.4302%.
+- Total Units: 274,776.
+- Total Orders: 31,455, not 121,253 sales lines.
+- Total Customers: 18,485.
+- Average per Order: 109,809,274.203 / 31,455 = 3,490.9958.
+- Average per Customer: 109,809,274.203 / 18,485 = 5,940.4530.
+
+March 2020 manual time-intelligence check:
+
+- March 2020 Net Sales: 4,429,832.5275.
+- February 2020 Net Sales: 4,070,045.8933.
+- MoM: (4,429,832.5275 - 4,070,045.8933) / 4,070,045.8933 = 8.8399%.
+- March 2019 Net Sales: 2,092,434.3516.
+- YoY: (4,429,832.5275 - 2,092,434.3516) / 2,092,434.3516 = 111.7071%.
+
+Edge cases:
+
+- July 2017 has no preceding month or prior-year data in this model, so both growth measures correctly return blank.
+- The growth measures also return blank for a zero or missing prior-period denominator through `DIVIDE`.
+- The 121,253 fact rows and 121,253 distinct line keys confirm that order count must use `SalesOrder[Sales Order]`, not `COUNTROWS(Sales)`.
+
 ## Validation checklist for future refreshes
 
 1. Confirm `SalesOrderLineKey` remains unique and that fact foreign keys match their dimension keys.
