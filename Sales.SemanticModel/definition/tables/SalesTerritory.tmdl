@@ -1,0 +1,49 @@
+table SalesTerritory
+	lineageTag: 9eaf54e3-3b9e-4be9-a918-39babf2b0bfb
+
+	column SalesTerritoryKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 086c334c-e49b-48bd-95c0-ad3d0afaaff4
+		summarizeBy: none
+		sourceColumn: SalesTerritoryKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: 3570546f-a4db-40e9-b0ac-efe89ffc46a9
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: 9acaa603-9036-4abe-a81e-f80054a28f6f
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Group
+		dataType: string
+		lineageTag: 699f013b-c13f-4dcc-9b3c-c61e9c4ab499
+		summarizeBy: none
+		sourceColumn: Group
+
+		annotation SummarizationSetBy = Automatic
+
+	partition SalesTerritory = m
+		mode: import
+		source =
+				let
+				  Source = Excel.Workbook(File.Contents("C:\Users\aruna.m\OneDrive - UB Technology Innovations, Inc\Power Platform\Copilot Data\AdventureWorks Sales.xlsx"), null, true),
+				  #"Navigation 1" = Source{[Item = "SalesTerritory", Kind = "Table"]}[Data],
+				  #"Changed column type" = Table.TransformColumnTypes(#"Navigation 1", {{"SalesTerritoryKey", Int64.Type}, {"Region", type text}, {"Country", type text}, {"Group", type text}}, "en-US"),
+				  #"Cleaned text" = Table.TransformColumns(#"Changed column type", {{"Region", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Country", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Group", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}})
+				in
+				  #"Cleaned text"
+
+	annotation PBI_ResultType = Table
+

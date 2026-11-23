@@ -1,0 +1,73 @@
+table Customer
+	lineageTag: 08c39c9d-b7e9-418b-bb8d-6bef6910f54a
+
+	column CustomerKey
+		dataType: int64
+		formatString: 0
+		lineageTag: d24925a5-3f96-4f75-8fd1-e0e55a1c9bf5
+		summarizeBy: none
+		sourceColumn: CustomerKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Customer ID'
+		dataType: string
+		lineageTag: 7cd8da95-80bd-4a14-848b-be8a2492ee68
+		summarizeBy: none
+		sourceColumn: Customer ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Customer
+		dataType: string
+		lineageTag: 5c34231e-2100-46c0-a0f4-0c80053c7b2c
+		summarizeBy: none
+		sourceColumn: Customer
+
+		annotation SummarizationSetBy = Automatic
+
+	column City
+		dataType: string
+		lineageTag: 84daa5a2-125e-48bd-8d7a-7702afba26b7
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = Automatic
+
+	column State-Province
+		dataType: string
+		lineageTag: 5c7f6177-69ec-42c9-812e-045b901a2781
+		summarizeBy: none
+		sourceColumn: State-Province
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country-Region
+		dataType: string
+		lineageTag: 8d9c12f2-0fdd-4203-8bd1-72e7d4ef8e28
+		summarizeBy: none
+		sourceColumn: Country-Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Postal Code'
+		dataType: string
+		lineageTag: b8b1b621-215a-4c39-a4c3-ff6bd66d444f
+		summarizeBy: none
+		sourceColumn: Postal Code
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Customer = m
+		mode: import
+		source =
+				let
+				  Source = Excel.Workbook(File.Contents("C:\Users\aruna.m\OneDrive - UB Technology Innovations, Inc\Power Platform\Copilot Data\AdventureWorks Sales.xlsx"), null, true),
+				  #"Navigation 1" = Source{[Item = "Customer", Kind = "Table"]}[Data],
+				  #"Changed column type" = Table.TransformColumnTypes(#"Navigation 1", {{"CustomerKey", Int64.Type}, {"Customer ID", type text}, {"Customer", type text}, {"City", type text}, {"State-Province", type text}, {"Country-Region", type text}, {"Postal Code", type text}}, "en-US"),
+				  #"Cleaned text" = Table.TransformColumns(#"Changed column type", {{"Customer ID", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Customer", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"City", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"State-Province", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Country-Region", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Postal Code", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}})
+				in
+				  #"Cleaned text"
+
+	annotation PBI_ResultType = Table
+

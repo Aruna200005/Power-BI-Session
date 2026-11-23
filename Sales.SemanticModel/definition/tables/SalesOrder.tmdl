@@ -1,0 +1,47 @@
+table SalesOrder
+	lineageTag: 426a08c5-a462-49e0-bdda-2947d1557d29
+
+	column Channel
+		dataType: string
+		lineageTag: 3f9291b9-5e0b-45b0-85a2-34197d596440
+		summarizeBy: none
+		sourceColumn: Channel
+
+		annotation SummarizationSetBy = Automatic
+
+	column SalesOrderLineKey
+		dataType: int64
+		formatString: 0
+		lineageTag: 4278261d-619a-4777-9da7-9c8ffa72008f
+		summarizeBy: none
+		sourceColumn: SalesOrderLineKey
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Order'
+		dataType: string
+		lineageTag: c474c53b-da62-45cb-954b-75daa878bed6
+		summarizeBy: none
+		sourceColumn: Sales Order
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sales Order Line'
+		dataType: string
+		lineageTag: 27286b89-fe0f-45b6-b56d-9ca945225224
+		summarizeBy: none
+		sourceColumn: Sales Order Line
+
+		annotation SummarizationSetBy = Automatic
+
+	partition SalesOrder = m
+		mode: import
+		source =
+				let
+				  Source = Excel.Workbook(File.Contents("C:\Users\aruna.m\OneDrive - UB Technology Innovations, Inc\Power Platform\Copilot Data\AdventureWorks Sales.xlsx"), null, true),
+				  #"Navigation 1" = Source{[Item = "SalesOrder", Kind = "Table"]}[Data],
+				  #"Changed column type" = Table.TransformColumnTypes(#"Navigation 1", {{"Channel", type text}, {"SalesOrderLineKey", Int64.Type}, {"Sales Order", type text}, {"Sales Order Line", type text}}, "en-US"),
+				  #"Cleaned text" = Table.TransformColumns(#"Changed column type", {{"Channel", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Sales Order", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}, {"Sales Order Line", each if _ = null then null else let value = Text.Trim(Text.Clean(_)) in if value = "" then null else value, type nullable text}})
+				in
+				  #"Cleaned text"
+
