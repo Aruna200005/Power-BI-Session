@@ -223,7 +223,7 @@ Primary measures:
 | Total Profit | Net Sales minus Total Cost |
 | Gross Margin % | `DIVIDE([Total Profit], [Net Sales])` |
 | Total Units | `SUM(Sales[Order Quantity])` |
-| Total Orders | `DISTINCTCOUNT(SalesOrder[Sales Order])` |
+| Total Orders | `DISTINCTCOUNT(Sales[Sales Order])` |
 | Total Customers | `DISTINCTCOUNT(Sales[CustomerKey])` |
 | Average Sales per Order | Net Sales divided by Total Orders |
 | Average Sales per Customer | Net Sales divided by Total Customers |
@@ -315,3 +315,114 @@ The fact-level order count must remain the primary order measure. It avoids the 
 3. Confirm quantity and monetary columns remain numeric, the discount field remains decimal, and gross/net differences are reviewed rather than silently overwritten.
 4. Recheck product key uniqueness and that category/subcategory values are populated or intentionally blank.
 5. Reconcile totals to the source for a selected period before publishing KPI cards.
+
+## Session 5: Capstone finish
+
+### Final measure set
+
+The semantic model now contains 20 measures:
+
+- Revenue/profit: Gross Sales, Net Sales, Total Cost, Total Profit, Gross Margin %, Total Units.
+- Order/customer: Total Orders, Total Customers, Average Sales per Order, Average Sales per Customer, Net Sales Per Order.
+- Time intelligence: Prior Month Net Sales, Month-over-Month Growth %, Prior Year Net Sales, Year-over-Year Growth %.
+- Variance: Sales Variance, Margin Variance.
+- Contribution: Product Contribution %, Territory Contribution %, Channel Contribution %.
+
+### Report build specification
+
+The report should use a single 1920×1080 executive page named **Sales & Product Performance**:
+
+1. Page title and a clear reporting-period subtitle.
+2. Six KPI cards: Net Sales, Gross Sales, Total Profit, Gross Margin %, Total Orders, and Total Units.
+3. One monthly line chart: Date[Month] on the axis and Net Sales plus Month-over-Month Growth % in tooltips or an accompanying growth card.
+4. One category bar chart: Product[Category] and Net Sales; use Total Profit and Total Units as tooltips.
+5. One territory bar chart: SalesTerritory[Region] and Net Sales; use Territory Contribution % and Total Orders as tooltips.
+6. One channel matrix: Sales[Sales Channel], Net Sales, Total Orders, Gross Margin %, and Channel Contribution %.
+7. Slicers for Date[Year/Fiscal Year], Product[Category], and SalesTerritory[Region].
+
+Recommended visual ordering follows the narrative:
+
+- First understand the amount and profitability.
+- Second identify month movement.
+- Third identify product and territory drivers.
+- Fourth compare channel economics.
+
+Do not place customer name, customer ID, reseller name, reseller ID, city, or postal code in report visuals. Keep hidden fields out of export and drill-through experiences.
+
+### DAX validation and edge cases
+
+Whole-model manual reconciliation:
+
+- Net Sales = 109,809,274.203.
+- Gross Sales = 110,336,782.0914.
+- Total Cost = 97,257,907.9547.
+- Total Profit = 12,551,366.2483.
+- Gross Margin % = 11.4302%.
+- Total Orders = 31,455.
+- Net Sales Per Order = 3,490.9958.
+- Average Sales per Customer = 5,940.4530.
+
+March 2020:
+
+- Net Sales = 4,429,832.5275.
+- Prior-month Net Sales = 4,070,045.8933.
+- MoM = 8.8399%.
+- Sales Variance = 359,786.6342.
+
+July 2017 edge case:
+
+- Prior Month Net Sales, MoM Growth %, Sales Variance, and Margin Variance return blank.
+
+Contribution reconciliation:
+
+- Product category contributions sum to 100%.
+- Reseller plus Internet channel contributions sum to 100%.
+- Territory contribution values sum to 100% across the 10 reporting regions.
+- Internet and Reseller Net Sales sum to 109,809,274.203.
+
+### Capstone rubric self-check
+
+| Rubric item | Status |
+|---|---|
+| Business question stated | Complete |
+| KPI definitions written | Complete |
+| Source and grain profiled | Complete |
+| Power Query transformations generated and explained | Complete |
+| Query output checked against source rows | Complete |
+| Star schema reviewed and relationships documented | Complete |
+| DAX measures created and explained | Complete |
+| Measures matched to manual calculations | Complete |
+| Edge cases tested | Complete |
+| Data dictionary written | Complete |
+| Sensitive-data fields identified and hidden | Complete |
+| Visual and narrative specification written | Complete |
+| Export and refresh reconciliations performed | Complete |
+| Report visuals added in Power BI Desktop | Manual handoff required |
+| Accessibility checker run | Manual handoff required |
+| Performance Analyzer run | Manual handoff required |
+
+### Work and handoff
+
+Repository and PBIP:
+
+- Updated: [Sales_KPI_Definitions.md](./Sales_KPI_Definitions.md)
+- Updated: `Sales.SemanticModel/definition/tables/Sales.tmdl`
+- Updated: `Sales.SemanticModel/definition/relationships.tmdl`
+- Existing report canvas: `Sales.Report/definition/pages/51ae08578c4181e78602/page.json`
+
+AI/Copilot features used:
+
+- Power Query cleanup and numeric type guidance.
+- DAX measure generation and filter-context debugging.
+- Semantic-model relationship review.
+- Source-row, measure, and edge-case validation queries.
+- Report narrative, accessibility, data-dictionary, and governance documentation.
+
+Hand changes still required:
+
+1. Add the specified visuals to the Page 1 report canvas.
+2. Set visual titles, subtitles, axis labels, tooltips, sort order, and slicer defaults.
+3. Set each KPI, chart, and slicer alternative text in Power BI Desktop.
+4. Run Power BI Desktop Accessibility checker.
+5. Run Performance Analyzer and verify no visual is unusually slow.
+6. Save and refresh the PBIP, then publish or share through the approved workspace.
